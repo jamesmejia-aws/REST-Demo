@@ -3,13 +3,14 @@ package com.spring.spring_rest.controller;
 
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,6 +25,9 @@ import com.spring.spring_rest.entity.Auth_Role;
 import com.spring.spring_rest.entity.Auth_User;
 import com.spring.spring_rest.repository.AuthRoleRepository;
 import com.spring.spring_rest.repository.AuthUserRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -97,30 +101,58 @@ public class AuthenticationController {
 		return new ResponseEntity<>(auth_user.getUsername() + " is successfully registered", HttpStatus.OK);
 	}
 	
-	@PostMapping("/auth_login")
-	public ResponseEntity<String> login(@RequestBody AuthLoginDto authLoginDto) {
-	    
-	    // 1. Check if the user even exists in the database
-	    if (!authUserRepo.existsByUsername(authLoginDto.getUsername())) {
-	        return new ResponseEntity<>("User does not exist.", HttpStatus.NOT_FOUND);
-	    }
-
-	    // 2. If they exist, attempt to authenticate their password
-	    try {
-	        Authentication authenticate = authenticationManager.authenticate(
-	                new UsernamePasswordAuthenticationToken(
-	                        authLoginDto.getUsername(),
-	                        authLoginDto.getPassword()
-	                )
-	        );
-	        
-	        SecurityContextHolder.getContext().setAuthentication(authenticate);
-	        return new ResponseEntity<>("Sign in successfully!", HttpStatus.OK);
-	        
-	    } catch (AuthenticationException e) {
-	        // This catches wrong passwords (BadCredentialsException)
-	        return new ResponseEntity<>("Incorrect password.", HttpStatus.UNAUTHORIZED);
-	    }
+//	@PostMapping("/auth_login")
+//	public ResponseEntity<String> login(@RequestBody AuthLoginDto authLoginDto) {
+//	    
+//	    // 1. Check if the user even exists in the database
+//	    if (!authUserRepo.existsByUsername(authLoginDto.getUsername())) {
+//	        return new ResponseEntity<>("User does not exist.", HttpStatus.NOT_FOUND);
+//	    }
+//
+//	    // 2. If they exist, attempt to authenticate their password
+//	    try {
+//	        Authentication authenticate = authenticationManager.authenticate(
+//	                new UsernamePasswordAuthenticationToken(
+//	                        authLoginDto.getUsername(),
+//	                        authLoginDto.getPassword()
+//	                )
+//	        );
+//	        
+//	        SecurityContextHolder.getContext().setAuthentication(authenticate);
+//	        return new ResponseEntity<>("Sign in successfully!", HttpStatus.OK);
+//	        
+//	    } catch (AuthenticationException e) {
+//	        // This catches wrong passwords (BadCredentialsException)
+//	        return new ResponseEntity<>("Incorrect password.", HttpStatus.UNAUTHORIZED);
+//	    }
+//	}
+	
+	@PostMapping("/auth_login_session")
+	public ResponseEntity<?> loginWithSession(@RequestBody AuthLoginDto authLoginDto,
+			HttpServletRequest request) {
+		
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(authLoginDto.getUsername(), 
+						authLoginDto.getPassword()));
+		
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+		HttpSession session = request.getSession(true);
+		session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
+		
+		Map<String, String> response = new HashMap<>();
+		response.put("message", "Authenticated successfully via session cookie.");
+		return ResponseEntity.ok(response);
+	}
+	
+	@PostMapping("/logout")
+	public ResponseEntity<String> logout(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session != null) {
+			session.invalidate();
+		}
+		SecurityContextHolder.clearContext();
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body("Logged out from session container.");
 	}
 	
 
