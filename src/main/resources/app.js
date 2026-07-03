@@ -6,7 +6,8 @@ async function createStudent(studentData) {
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(studentData)
+            body: JSON.stringify(studentData),
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -49,7 +50,9 @@ function resetForm() {
 
 async function getAllStudents() {
     try {
-        const response = await fetch(API_URL);
+        const response = await fetch(API_URL, {
+            credentials: "include"
+        });
         if (!response.ok) {
             throw new Error("Network response was not ok");
         }
@@ -83,7 +86,9 @@ document.addEventListener("DOMContentLoaded", getAllStudents);
 
 async function initializeStudentFormById(id) {
     try {
-        const response = await fetch(`${API_URL}/${id}`);
+        const response = await fetch(`${API_URL}/${id}`, {
+            credentials: "include"
+        });
         if (!response.ok) throw new Error("Could not fetch student details");
 
         const student = await response.json();
@@ -108,7 +113,8 @@ async function updateStudent(id, studentData) {
         const response = await fetch(`${API_URL}/${id}`, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify(studentData)
+            body: JSON.stringify(studentData),
+            credentials: "include"
         });
 
         if (response.ok) {
@@ -127,7 +133,8 @@ async function deleteStudent(id) {
     if (confirm("Are you sure you want to delete this student?")) {
         try {
             const response = await fetch(`${API_URL}/${id}`, {
-                method: "DELETE"
+                method: "DELETE",
+                credentials: "include"
             });
 
             if (response.ok) {
